@@ -316,15 +316,13 @@ int main(int argc, char *argv[])
 
     t0 = get_wtime();
 
-    //do n trials
-#pragma omp parallel num_threads(4)
-
-    //these variables will be private
     double fx;
     int jj;
     double startpt[MAXVARS], endpt[MAXVARS];
 
-    #pragma omp for
+    //do n trials
+#pragma omp parallel for num_threads(4) private(fx,jj,startpt,endpt)
+
     for (trial = 0; trial < ntrials; trial++)
     {
         /* starting guess for rosenbrock test function, search space in [-4, 4) */
@@ -349,7 +347,7 @@ int main(int argc, char *argv[])
 
         if (fx < best_fx)
         {
-            #pragma omp critical
+            #pragma omp critical        //only one thread can access the shared arrays each time
             {
             best_trial = trial;
             best_jj = jj;
