@@ -2,8 +2,8 @@
 
 all: hooke
 
-hooke: multistart_hooke_seq.c
-	 gcc -Wall -O3 -o multistart_hooke_omp multistart_hooke_omp.c -lm
+hooke: multistart_hooke_omp.c
+	 gcc -Wall -O3 -o multistart_hooke_omp multistart_hooke_omp.c -lm -fopenmp
 
 clean:
 	rm -f multistart_hooke_omp
