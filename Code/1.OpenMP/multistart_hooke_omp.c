@@ -133,6 +133,8 @@
 #include <time.h>
 #include <sys/time.h>
 
+#include <omp.h>
+
 #define MAXVARS (250)   /* max # of variables	     */
 #define RHO_BEGIN (0.5) /* stepsize geometric shrink */
 #define EPSMIN (1E-6)   /* ending value of stepsize  */
@@ -321,7 +323,7 @@ int main(int argc, char *argv[])
     double startpt[MAXVARS], endpt[MAXVARS];
 
     //do n trials
-#pragma omp parallel for num_threads(4) private(fx,jj,startpt,endpt)
+#pragma omp parallel for num_threads(4) default(none) private(fx, jj, startpt, endpt) shared(best_fx, best_pt, best_trial, best_jj)
 
     for (trial = 0; trial < ntrials; trial++)
     {
@@ -335,7 +337,7 @@ int main(int argc, char *argv[])
 
 #if DEBUG
         printf("\n\n\nHOOKE %d USED %d ITERATIONS, AND RETURNED\n", trial, jj);
-        for (i = 0; i < nvars; i++)
+        for (int i = 0; i < nvars; i++)
             printf("x[%3d] = %15.7le \n", i, endpt[i]);
 #endif
 
