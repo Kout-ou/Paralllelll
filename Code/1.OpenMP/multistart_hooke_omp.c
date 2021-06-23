@@ -321,16 +321,24 @@ int main(int argc, char *argv[])
     double fx;
     int jj;
     double startpt[MAXVARS], endpt[MAXVARS];
+    long long seed = 112105107105112105107105114111109;     //ascii value of "pikipikirom" a random phrase we came up with
 
     //do n trials
-#pragma omp parallel for num_threads(4) default(none) private(fx, jj, startpt, endpt) shared(best_fx, best_pt, best_trial, best_jj)
+#pragma omp parallel
 
+    unsigned short randBuffer[3];
+    unsigned short randBuffer[3];
+    randBuffer[0] = 0;
+    randBuffer[1] = 0;
+    randBuffer[2] = seed + omp_get_thread_num();
+    
+#pragma omp for num_threads(4) default(none) private(fx, jj, startpt, endpt) shared(best_fx, best_pt, best_trial, best_jj)
     for (trial = 0; trial < ntrials; trial++)
     {
         /* starting guess for rosenbrock test function, search space in [-4, 4) */
         for (int i = 0; i < nvars; i++)
         {
-            startpt[i] = 4.0 * drand48() - 4.0;
+            startpt[i] = 4.0 * erand48(randBuffer) - 4.0;
         }
 
         jj = hooke(nvars, startpt, endpt, rho, epsilon, itermax);
