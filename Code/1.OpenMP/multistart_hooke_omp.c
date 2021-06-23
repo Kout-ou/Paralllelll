@@ -324,14 +324,14 @@ int main(int argc, char *argv[])
     short seed = (short)get_wtime(); //seed for erand()
 
     //do n trials
-#pragma omp parallel
-
+#pragma omp parallel num_threads(4) default(none) private(fx, jj, startpt, endpt) shared(best_fx, best_pt, best_trial, best_jj)
+    {
     unsigned short randBuffer[3];
     randBuffer[0] = 0;
     randBuffer[1] = 0;
     randBuffer[2] = seed + omp_get_thread_num();
     
-#pragma omp for num_threads(4) default(none) private(fx, jj, startpt, endpt) shared(best_fx, best_pt, best_trial, best_jj)
+#pragma omp for
     for (trial = 0; trial < ntrials; trial++)
     {
         /* starting guess for rosenbrock test function, search space in [-4, 4) */
@@ -365,7 +365,9 @@ int main(int argc, char *argv[])
                 best_pt[i] = endpt[i];
             }
         }
-    }
+    }       // for   
+
+    }       // parallel
 
     t1 = get_wtime();
 

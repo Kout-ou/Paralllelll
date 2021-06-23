@@ -334,7 +334,7 @@ int main(int argc, char *argv[])
     short seed = (short)get_wtime(); //seed for erand()
 
 #pragma omp parallel
-
+    {
     unsigned short randBuffer[3];
     randBuffer[0] = 0;
     randBuffer[1] = 0;
@@ -342,22 +342,19 @@ int main(int argc, char *argv[])
 
     for (trial = 0; trial < ntrials; trial++)
     {   
-        #pragma omp task
         /* starting guess for rosenbrock test function, search space in [-4, 4) */
         for (int i = 0; i < nvars; i++)
         {
             startpt[i] = 4.0 * erand48(randBuffer) - 4.0;
         }
 
-        #pragma omp task
         jj = hooke(nvars, startpt, endpt, rho, epsilon, itermax);
-
+        
 #if DEBUG
         printf("\n\n\nHOOKE %d USED %d ITERATIONS, AND RETURNED\n", trial, jj);
         for (int i = 0; i < nvars; i++)
             printf("x[%3d] = %15.7le \n", i, endpt[i]);
 #endif
-        #pragma omp task
         fx = f(endpt, nvars);
 
 #if DEBUG
@@ -375,6 +372,8 @@ int main(int argc, char *argv[])
             }
         }
     }
+
+    }//parallel
 
     t1 = get_wtime();
 
