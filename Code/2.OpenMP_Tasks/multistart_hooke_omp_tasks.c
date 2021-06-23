@@ -331,11 +331,10 @@ int main(int argc, char *argv[])
     double fx;
     int jj;
     double startpt[MAXVARS], endpt[MAXVARS];
-    short seed = (short)time(0);        //seed for erand()
+    short seed = (short)get_wtime(); //seed for erand()
 
 #pragma omp parallel
 
-    unsigned short randBuffer[3];
     unsigned short randBuffer[3];
     randBuffer[0] = 0;
     randBuffer[1] = 0;

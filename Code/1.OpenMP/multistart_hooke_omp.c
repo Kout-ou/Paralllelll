@@ -321,12 +321,11 @@ int main(int argc, char *argv[])
     double fx;
     int jj;
     double startpt[MAXVARS], endpt[MAXVARS];
-    long long seed = 112105107105112105107105114111109;     //ascii value of "pikipikirom" a random phrase we came up with
+    short seed = (short)get_wtime(); //seed for erand()
 
     //do n trials
 #pragma omp parallel
 
-    unsigned short randBuffer[3];
     unsigned short randBuffer[3];
     randBuffer[0] = 0;
     randBuffer[1] = 0;
