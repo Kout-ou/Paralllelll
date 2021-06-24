@@ -3,10 +3,10 @@
 all: hooke
 
 hooke: multistart_hooke_omp_tasks.c
-	 gcc -Wall -O3 -o multistart_hooke_omp_tasks multistart_hooke_omp_tasks.c -lm
+	 gcc -Wall -O3 -o multistart_hooke_omp_tasks multistart_hooke_omp_tasks.c -lm -fopenmp
 
 mac: multistart_hooke_omp_tasks.c
-	gcc-11 -Wall -O3 -o multistart_hooke_omp_tasks multistart_hooke_omp_tasks.c -lm
+	gcc-11 -Wall -O3 -o multistart_hooke_omp_tasks multistart_hooke_omp_tasks.c -lm -fopenmp
 
 clean:
 	rm -f multistart_hooke_omp_tasks
