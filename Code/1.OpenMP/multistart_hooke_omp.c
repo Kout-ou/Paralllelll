@@ -318,18 +318,20 @@ int main(int argc, char *argv[])
 
     t0 = get_wtime();
 
-    double fx;
-    int jj;
-    double startpt[MAXVARS], endpt[MAXVARS];
 
     //do n trials
-#pragma omp parallel num_threads(4) default(none) private(fx, jj, startpt, endpt) shared(best_fx, best_pt, best_trial, best_jj)
+#pragma omp parallel num_threads(4)
     {
-    short seed = (short)get_wtime(); //seed for erand()
-    unsigned short randBuffer[3];
-    randBuffer[0] = 0;
-    randBuffer[1] = 0;
-    randBuffer[2] = seed + omp_get_thread_num();
+
+        double fx;
+        int jj;
+        double startpt[MAXVARS], endpt[MAXVARS];
+
+        short seed = (short)get_wtime(); //seed for erand()
+        unsigned short randBuffer[3];
+        randBuffer[0] = 0;
+        randBuffer[1] = 0;
+        randBuffer[2] = seed + omp_get_thread_num();
     
 #pragma omp for
     for (trial = 0; trial < ntrials; trial++)
