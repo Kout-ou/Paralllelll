@@ -299,6 +299,7 @@ int main(int argc, char *argv[])
 
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    
 
     int itermax = IMAX;
     double rho = RHO_BEGIN;
@@ -349,11 +350,12 @@ int main(int argc, char *argv[])
             for (int i = 0; i < nvars; i++)
                 printf("x[%3d] = %15.7le \n", i, endpt[i]);
 #endif
-
+	
             fx = f(endpt, nvars);
 
-            //MPI_send fx (MUST BE FIRST AND BLOCKING)
-            //MPI_send trial,jj
+           MPI_Ssend(&fx,1,MPI_DOUBLE,rank,1,MPI_COMM_WORLD); //MPI_send fx (MUST BE FIRST AND BLOCKING)
+           MPI_Ssend(&trial,1,MPI_INT,rank,2,MPI_COMM_WORLD);
+           MPI_Ssend(&jj,1,MPI_INT,rank,3,MPI_COMM_WORLD);
 #if DEBUG
             printf("f(x) = %15.7le\n", fx);
 #endif
@@ -362,7 +364,10 @@ int main(int argc, char *argv[])
         {
             for (int i; i <= ntrials, i++)
             {
-                //MPI_receive fx (MUST BE FIRST)
+            MPI_Status= status;
+                MPI_Recv(&fx,1,MPI_DOUBLE,0,1,MPI_COMM_WORLD,&status);
+                MPI_Recv(&trial,1,MPI_INT,0,2,MPI_COMM_WORLD,&status);
+                MPI_Recv(&jj,1,MPI_INT,0,3,MPI_COMM_WORLD,&status);//MPI_receive fx (MUST BE FIRST)
                 //MPI_receive trial,jj
                 if (fx < best_fx)
                 {
