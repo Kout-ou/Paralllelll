@@ -217,7 +217,6 @@ int hooke(int nvars, double startpt[MAXVARS], double endpt[MAXVARS], double rho,
     newf = fbefore;
     while ((iters < itermax) && (steplength > epsilon))
     {
-
         iters++;
         iadj++;
 #if DEBUG
@@ -231,15 +230,12 @@ int hooke(int nvars, double startpt[MAXVARS], double endpt[MAXVARS], double rho,
         {
             newx[i] = xbefore[i];
         }
-
         newf = best_nearby(delta, newx, fbefore, nvars);
         /* if we made some improvements, pursue that direction */
         keep = 1;
-
         while ((newf < fbefore) && (keep == 1))
         {
             iadj = 0;
-
             for (i = 0; i < nvars; i++)
             {
                 /* firstly, arrange the sign of delta[] */
@@ -252,11 +248,8 @@ int hooke(int nvars, double startpt[MAXVARS], double endpt[MAXVARS], double rho,
                 xbefore[i] = newx[i];
                 newx[i] = newx[i] + newx[i] - tmp;
             }
-
             fbefore = newf;
-
             newf = best_nearby(delta, newx, fbefore, nvars);
-
             /* if the further (optimistic) move was bad.... */
             if (newf >= fbefore)
                 break;
@@ -266,7 +259,6 @@ int hooke(int nvars, double startpt[MAXVARS], double endpt[MAXVARS], double rho,
             /* displacements; beware of roundoff errors that */
             /* might cause newf < fbefore */
             keep = 0;
-
             for (i = 0; i < nvars; i++)
             {
                 keep = 1;
@@ -276,7 +268,6 @@ int hooke(int nvars, double startpt[MAXVARS], double endpt[MAXVARS], double rho,
                     keep = 0;
             }
         }
-
         if ((steplength >= epsilon) && (newf >= fbefore))
         {
             steplength = steplength * rho;
@@ -286,7 +277,6 @@ int hooke(int nvars, double startpt[MAXVARS], double endpt[MAXVARS], double rho,
             }
         }
     }
-
     for (i = 0; i < nvars; i++)
         endpt[i] = xbefore[i];
 
@@ -304,7 +294,7 @@ double get_wtime(void)
 
 int main(int argc, char *argv[])
 {
-    
+
     int itermax = IMAX;
     double rho = RHO_BEGIN;
     double epsilon = EPSMIN;
@@ -328,52 +318,60 @@ int main(int argc, char *argv[])
 
     t0 = get_wtime();
 
-    double fx;
-    int jj;
-    double startpt[MAXVARS], endpt[MAXVARS];
-    short seed = (short)get_wtime(); //seed for erand()
-
-#pragma omp parallel
+    //do n trials
+#pragma omp parallel num_threads(4)
     {
-    unsigned short randBuffer[3];
-    randBuffer[0] = 0;
-    randBuffer[1] = 0;
-    randBuffer[2] = seed + omp_get_thread_num();
 
-    for (trial = 0; trial < ntrials; trial++)
-    {   
-        /* starting guess for rosenbrock test function, search space in [-4, 4) */
-        for (int i = 0; i < nvars; i++)
+        double fx;
+        int jj;
+        double startpt[MAXVARS], endpt[MAXVARS];
+
+        short seed = (short)get_wtime(); //seed for erand()
+        unsigned short randBuffer[3];
+        randBuffer[0] = 0;
+        randBuffer[1] = 0;
+        randBuffer[2] = seed + omp_get_thread_num();
+
+#pragma omp single nowait
+        for (trial = 0; trial < ntrials; trial++)
         {
-            startpt[i] = 4.0 * erand48(randBuffer) - 4.0;
-        }
-
-        jj = hooke(nvars, startpt, endpt, rho, epsilon, itermax);
-        
-#if DEBUG
-        printf("\n\n\nHOOKE %d USED %d ITERATIONS, AND RETURNED\n", trial, jj);
-        for (int i = 0; i < nvars; i++)
-            printf("x[%3d] = %15.7le \n", i, endpt[i]);
-#endif
-        fx = f(endpt, nvars);
-
-#if DEBUG
-        printf("f(x) = %15.7le\n", fx);
-#endif
-        if (fx < best_fx)
-        {
-            #pragma omp critical        //only one thread can access the shared arrays each time
+            #pragma omp task
             {
-            best_trial = trial;
-            best_jj = jj;
-            best_fx = fx;
+            /* starting guess for rosenbrock test function, search space in [-4, 4) */
             for (int i = 0; i < nvars; i++)
-                best_pt[i] = endpt[i];
+            {
+                startpt[i] = 4.0 * erand48(randBuffer) - 4.0;
             }
-        }
-    }
 
-    }//parallel
+            jj = hooke(nvars, startpt, endpt, rho, epsilon, itermax);
+
+#if DEBUG
+            printf("\n\n\nHOOKE %d USED %d ITERATIONS, AND RETURNED\n", trial, jj);
+            for (int i = 0; i < nvars; i++)
+                printf("x[%3d] = %15.7le \n", i, endpt[i]);
+#endif
+
+            fx = f(endpt, nvars);
+
+#if DEBUG
+            printf("f(x) = %15.7le\n", fx);
+#endif
+
+            if (fx < best_fx)
+            {
+                #pragma omp critical //only one thread can access the shared arrays each time
+                {
+                    best_trial = trial;
+                    best_jj = jj;
+                    best_fx = fx;
+                    for (int i = 0; i < nvars; i++)
+                        best_pt[i] = endpt[i];
+                }   //critical
+            }
+            }   //task
+        }   // for
+
+    }   // parallel
 
     t1 = get_wtime();
 
@@ -382,7 +380,6 @@ int main(int argc, char *argv[])
     printf("Total number of trials = %d\n", ntrials);
     printf("Total number of function evaluations = %ld\n", funevals);
     printf("Best result at trial %d used %d iterations, and returned\n", best_trial, best_jj);
-
     for (int i = 0; i < nvars; i++)
     {
         printf("x[%3d] = %15.7le \n", i, best_pt[i]);
