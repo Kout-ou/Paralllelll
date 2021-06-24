@@ -318,7 +318,6 @@ int main(int argc, char *argv[])
 
     t0 = get_wtime();
 
-
     //do n trials
 #pragma omp parallel num_threads(4)
     {
@@ -334,42 +333,42 @@ int main(int argc, char *argv[])
         randBuffer[2] = seed + omp_get_thread_num();
 
 #pragma omp for
-    for (trial = 0; trial < ntrials; trial++)
-    {
-        /* starting guess for rosenbrock test function, search space in [-4, 4) */
-        for (int i = 0; i < nvars; i++)
+        for (trial = 0; trial < ntrials; trial++)
         {
-            startpt[i] = 4.0 * erand48(randBuffer) - 4.0;
-        }
-
-        jj = hooke(nvars, startpt, endpt, rho, epsilon, itermax);
-
-#if DEBUG
-        printf("\n\n\nHOOKE %d USED %d ITERATIONS, AND RETURNED\n", trial, jj);
-        for (int i = 0; i < nvars; i++)
-            printf("x[%3d] = %15.7le \n", i, endpt[i]);
-#endif
-
-        fx = f(endpt, nvars);
-
-#if DEBUG
-        printf("f(x) = %15.7le\n", fx);
-#endif
-
-        if (fx < best_fx)
-        {
-            #pragma omp critical        //only one thread can access the shared arrays each time
-            {
-            best_trial = trial;
-            best_jj = jj;
-            best_fx = fx;
+            /* starting guess for rosenbrock test function, search space in [-4, 4) */
             for (int i = 0; i < nvars; i++)
-                best_pt[i] = endpt[i];
+            {
+                startpt[i] = 4.0 * erand48(randBuffer) - 4.0;
             }
-        }
-    }       // for
 
-    }       // parallel
+            jj = hooke(nvars, startpt, endpt, rho, epsilon, itermax);
+
+#if DEBUG
+            printf("\n\n\nHOOKE %d USED %d ITERATIONS, AND RETURNED\n", trial, jj);
+            for (int i = 0; i < nvars; i++)
+                printf("x[%3d] = %15.7le \n", i, endpt[i]);
+#endif
+
+            fx = f(endpt, nvars);
+
+#if DEBUG
+            printf("f(x) = %15.7le\n", fx);
+#endif
+
+            if (fx < best_fx)
+            {
+#pragma omp critical //only one thread can access the shared arrays each time
+                {
+                    best_trial = trial;
+                    best_jj = jj;
+                    best_fx = fx;
+                    for (int i = 0; i < nvars; i++)
+                        best_pt[i] = endpt[i];
+                }
+            }
+        } // for
+
+    } // parallel
 
     t1 = get_wtime();
 
