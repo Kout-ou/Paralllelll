@@ -2,10 +2,10 @@
 
 all: hooke
 
-hooke: multistart_hooke_seq.c
+hooke: multistart_hooke_mpi.c
 	 gcc -Wall -O3 -o multistart_hooke_mpi multistart_hooke_mpi.c -lm
 
-mac: 
+mac: multistart_hooke_mpi.c
 	gcc-11 -Wall -O3 -o multistart_hooke_mpi multistart_hooke_mpi.c -lm
 
 
