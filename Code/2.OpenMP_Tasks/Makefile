@@ -5,5 +5,8 @@ all: hooke
 hooke: multistart_hooke_seq.c
 	 gcc -Wall -O3 -o multistart_hooke_omp_tasks multistart_hooke_omp_tasks.c -lm
 
+mac: 
+	gcc-11 -Wall -O3 -o multistart_hooke_omp_tasks multistart_hooke_omp_tasks.c -lm
+
 clean:
 	rm -f multistart_hooke_omp_tasks
