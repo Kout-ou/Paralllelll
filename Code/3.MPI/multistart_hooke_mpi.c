@@ -135,10 +135,10 @@
 
 #include <mpi.h>
 
-#define MAXVARS (250)     // max # of variables
-#define RHO_BEGIN (0.5)   // stepsize geometric shrink
-#define EPSMIN (1E-6)     // ending value of stepsize 
-#define IMAX (5000)       // max # of iterations
+#define MAXVARS (250)   // max # of variables
+#define RHO_BEGIN (0.5) // stepsize geometric shrink
+#define EPSMIN (1E-6)   // ending value of stepsize
+#define IMAX (5000)     // max # of iterations
 
 #define DEBUG 0
 
@@ -304,21 +304,21 @@ int main(int argc, char *argv[])
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
   //  Variable declarations.
-  double t0, t1;   //  Used by main rank for time calculation.
+  double t0, t1; //  Used by main rank for time calculation.
 
   int itermax = IMAX;
   double rho = RHO_BEGIN;
   double epsilon = EPSMIN;
 
-  int nvars = 16;    // Number of variables (problem dimension).
+  int nvars = 16; // Number of variables (problem dimension).
   int trial;
-  int ntrials = 128 * 1024;    // Number of trials.
-  int mpi_ntrials = ntrials / (MPI_RANKS - 1);    // Distribute for-loop evenly between secondary ranks (rank 0 is main rank).
+  int ntrials = 128 * 1024;                    // Number of trials.
+  int mpi_ntrials = ntrials / (MPI_RANKS - 1); // Distribute for-loop evenly between secondary ranks (rank 0 is main rank).
 
-  double best_fx = 1e10;      //
-  double best_pt[MAXVARS];    //  Store the best possible solution here.
-  int best_trial = -1;        //
-  int best_jj = -1;           //
+  double best_fx = 1e10;   //
+  double best_pt[MAXVARS]; //  Store the best possible solution here.
+  int best_trial = -1;     //
+  int best_jj = -1;        //
 
   //  Initialize best_pt[].
   for (int i = 0; i < MAXVARS; i++)
@@ -334,7 +334,7 @@ int main(int argc, char *argv[])
   double startpt[MAXVARS], endpt[MAXVARS];
 
   //  Variables used by erand() -- rand() safe for multithreading.
-  short seed = (short)get_wtime();    //  Seed for erand().
+  short seed = (short)get_wtime(); //  Seed for erand().
   unsigned short randBuffer[3];
   randBuffer[0] = 0;
   randBuffer[1] = 0;
@@ -367,7 +367,6 @@ int main(int argc, char *argv[])
       fx = f(endpt, nvars);
 
       //  Send the results to main rank (send fx and block until main acknowledges you).
-      printf("Sending \n");
       MPI_Ssend(&fx, 1, MPI_DOUBLE, 0, 1, MPI_COMM_WORLD); //MPI_send fx (MUST BE FIRST AND BLOCKING)
       MPI_Ssend(&trial, 1, MPI_INT, 0, 2, MPI_COMM_WORLD);
       MPI_Ssend(&jj, 1, MPI_INT, 0, 3, MPI_COMM_WORLD);
@@ -390,7 +389,6 @@ int main(int argc, char *argv[])
     {
       //  Receive the values from each process (the first process to be aknowledged will be unblocked and able to send all its calculated values).
       MPI_Recv(&fx, 1, MPI_DOUBLE, MPI_ANY_SOURCE, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-      printf("received \n");
       MPI_Recv(&trial, 1, MPI_INT, MPI_ANY_SOURCE, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
       MPI_Recv(&jj, 1, MPI_INT, MPI_ANY_SOURCE, 3, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
       MPI_Recv(&endpt, 250, MPI_DOUBLE, MPI_ANY_SOURCE, 4, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
@@ -410,7 +408,6 @@ int main(int argc, char *argv[])
 
     t1 = get_wtime();
 
-
     //  Print the final results.
     printf("\n\nFINAL RESULTS:\n");
     printf("Elapsed time = %.3lf s\n", t1 - t0);
@@ -425,7 +422,7 @@ int main(int argc, char *argv[])
   }
 
   //  Finalize MPI session.
-  MPI_Finalize(); 
+  MPI_Finalize();
 
   return 0;
 }

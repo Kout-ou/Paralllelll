@@ -464,9 +464,7 @@ int main(int argc, char *argv[])
     for (int i = 0; i < ntrials; i++)
     {
       //  Receive the values from each process (the first process to be aknowledged will be unblocked and able to send all its calculated values).
-      printf("%d\n", i);
       MPI_Recv(&fx, 1, MPI_DOUBLE, MPI_ANY_SOURCE, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-      printf("received \n");
       MPI_Recv(&trial, 1, MPI_INT, MPI_ANY_SOURCE, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
       MPI_Recv(&jj, 1, MPI_INT, MPI_ANY_SOURCE, 3, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
       MPI_Recv(&endpt, 250, MPI_DOUBLE, MPI_ANY_SOURCE, 4, MPI_COMM_WORLD, MPI_STATUS_IGNORE); //MPI_receive fx (MUST BE FIRST)
