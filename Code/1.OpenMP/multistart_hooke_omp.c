@@ -133,7 +133,7 @@
 #include <time.h>
 #include <sys/time.h>
 
-#include <omp.h>
+#include <omp.h>        //  Include OpenMP library
 
 #define MAXVARS (250)   /* max # of variables	     */
 #define RHO_BEGIN (0.5) /* stepsize geometric shrink */

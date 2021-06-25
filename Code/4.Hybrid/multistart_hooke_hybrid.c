@@ -133,8 +133,8 @@
 #include <time.h>
 #include <sys/time.h>
 
-#include <mpi.h>    //  Include MPI library
-#include <omp.h>    //  Include OpenMP library.
+#include <mpi.h> //  Include MPI library
+#include <omp.h> //  Include OpenMP library.
 
 #define MAXVARS (250)   /* max # of variables	     */
 #define RHO_BEGIN (0.5) /* stepsize geometric shrink */
@@ -295,39 +295,6 @@ double get_wtime(void)
   return (double)t.tv_sec + (double)t.tv_usec * 1.0e-6;
 }
 
-//  A function to return a unique tag for each rank's thread (given that the maximum number of ranks is 4)
-int get_comm_tag(int rank, int tid)
-{
-  switch (rank)
-    {
-    case 1:
-      if (tid == 0) return 0;
-      if (tid == 1) return 1;
-      if (tid == 2) return 2;
-      if (tid == 3) return 3;
-      break;
-    case 2:
-      if (tid == 0) return 4;
-      if (tid == 1) return 5;
-      if (tid == 2) return 6;
-      if (tid == 3) return 7;
-      break;
-    case 3:
-      if (tid == 0) return 8;
-      if (tid == 1) return 9;
-      if (tid == 2) return 10;
-      if (tid == 3) return 11;
-      break;
-    case 4:
-      if (tid == 0) return 12;
-      if (tid == 1) return 13;
-      if (tid == 2) return 14;
-      if (tid == 3) return 15;
-      break;
-    default: return -1;
-    }
-}
-
 int main(int argc, char *argv[])
 {
   //  Initialize MPI with multithreading (MPI_THREAD MULTIPLE allows all threads of a rank to be able to communicate).
@@ -354,10 +321,10 @@ int main(int argc, char *argv[])
   int itermax = IMAX;
   double rho = RHO_BEGIN;
   double epsilon = EPSMIN;
-  int nvars = 16;             //  Number of variables (problem dimension).
+  int nvars = 16; //  Number of variables (problem dimension).
   int trial;
-  int ntrials = 128 * 1024;   // Number of trials.
-  int mpi_ntrials = ntrials / (MPI_RANKS - 1);    // Distribute for-loop evenly between secondary ranks (rank 0 is main rank).
+  int ntrials = 128 * 1024;                    // Number of trials.
+  int mpi_ntrials = ntrials / (MPI_RANKS - 1); // Distribute for-loop evenly between secondary ranks (rank 0 is main rank).
 
   double best_fx = 1e10;
   double best_pt[MAXVARS];
@@ -390,7 +357,7 @@ int main(int argc, char *argv[])
     /* Secondary rank(s) only: Perform the comparisons and find the best values. */
     /*****************************************************************************/
 
-#pragma omp parallel    //  Split each secondary rank to threads.
+#pragma omp parallel //  Split each secondary rank to threads.
     {
 
       double fx;
@@ -398,23 +365,11 @@ int main(int argc, char *argv[])
       double startpt[MAXVARS], endpt[MAXVARS];
 
       //  Variables used by erand() -- rand() safe for multithreading.
-      short seed = (short)get_wtime();    //  Seed for erand().
+      short seed = (short)get_wtime(); //  Seed for erand().
       unsigned short randBuffer[3];
       randBuffer[0] = 0;
       randBuffer[1] = 0;
       randBuffer[2] = seed + omp_get_thread_num();
-
-      // Get a unique tag for messaging the main rank. The tag is determined by the rank and the thread_id of each rank.
-      int tid = (int)omp_get_thread_num();  //  Make sure it returns thread_id as int.
-      int tag = get_comm_tag(rank, tid);
-      
-      //  Check if tag assignment went on smoothly.
-      if (tag == -1)
-      {
-        printf("Error: Something went wrong during MPI message tag assignment. \n");
-        MPI_Finalize();
-        return 1;
-      }
 
       //  Distribute for-loop of trials between available threads
 #pragma omp for
@@ -438,13 +393,15 @@ int main(int argc, char *argv[])
 
         fx = f(endpt, nvars);
 
-        //  Send the results to main rank (send fx and block until main acknowledges you).
+        //  Send the results to main rank, one at a time(send fx and block until main acknowledges you).
         //  (*) All threads can send data to the main rank (MPI_THREAD_MULTIPLE)
-        MPI_Ssend(&fx, 1, MPI_DOUBLE, 0, tag, MPI_COMM_WORLD);
-        MPI_Ssend(&trial, 1, MPI_INT, 0, tag+1, MPI_COMM_WORLD);
-        MPI_Ssend(&jj, 1, MPI_INT, 0, tag+2, MPI_COMM_WORLD);
-        MPI_Ssend(&endpt, 250, MPI_DOUBLE, tag+3, tag, MPI_COMM_WORLD);
-
+#pragma omp critical
+        {
+          MPI_Ssend(&fx, 1, MPI_DOUBLE, 0, 1, MPI_COMM_WORLD);
+          MPI_Ssend(&trial, 1, MPI_INT, 0, 2, MPI_COMM_WORLD);
+          MPI_Ssend(&jj, 1, MPI_INT, 0, 3, MPI_COMM_WORLD);
+          MPI_Ssend(&endpt, 250, MPI_DOUBLE, 0, 4, MPI_COMM_WORLD);
+        }
 
 #if DEBUG
         printf("f(x) = %15.7le\n", fx);
@@ -463,7 +420,7 @@ int main(int argc, char *argv[])
 
     for (int i = 0; i < ntrials; i++)
     {
-      //  Receive the values from each process (the first process to be aknowledged will be unblocked and able to send all its calculated values).
+      //  Receive the values from any process (the first process to be aknowledged will be unblocked and able to send all its calculated values).
       MPI_Recv(&fx, 1, MPI_DOUBLE, MPI_ANY_SOURCE, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
       MPI_Recv(&trial, 1, MPI_INT, MPI_ANY_SOURCE, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
       MPI_Recv(&jj, 1, MPI_INT, MPI_ANY_SOURCE, 3, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
@@ -476,9 +433,9 @@ int main(int argc, char *argv[])
         best_jj = jj;
         best_fx = fx;
         for (int i = 0; i < nvars; i++)
-            {
+        {
           best_pt[i] = endpt[i];
-            }
+        }
       }
     }
 
