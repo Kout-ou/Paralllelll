@@ -315,7 +315,7 @@ int main(int argc, char *argv[])
     {
         best_pt[i] = 0.0;
     }
-    
+
     srand48(time(0));
 
     t0 = get_wtime();
@@ -339,6 +339,7 @@ int main(int argc, char *argv[])
         randBuffer[1] = 0;
         randBuffer[2] = seed + omp_get_thread_num();
 
+        //  One thread enters the for-loop and distributes the generated tasks (in our case each task in one whole repetition) to all threads available
 #pragma omp single nowait
         for (trial = 0; trial < ntrials; trial++)
         {
