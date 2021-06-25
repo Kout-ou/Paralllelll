@@ -3,10 +3,10 @@
 all: hooke
 
 hooke: multistart_hooke_hybrid.c
-	 mpicc -Wall -O3 -o multistart_hooke_hybrid multistart_hooke_hybrid.c -lm -fopenmp
+	 mpicc -Wall -fopenmp -O3 -o multistart_hooke_hybrid multistart_hooke_hybrid.c -lm 
 
 mac: multistart_hooke_hybrid.c
-	mpicc -Wall -O3 -o multistart_hooke_hybrid multistart_hooke_hybrid.c -lm -openmp
+	mpicc -Wall -openmp -O3 -o multistart_hooke_hybrid multistart_hooke_hybrid.c -lm 
 
 clean:
 	rm -f multistart_hooke_mpi_omp
