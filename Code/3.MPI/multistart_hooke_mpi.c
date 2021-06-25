@@ -305,7 +305,6 @@ int main(int argc, char *argv[])
   double epsilon = EPSMIN;
   int nvars;
   int trial, ntrials;
-  double t0, t1;
 
   double best_fx = 1e10;
   double best_pt[MAXVARS];
@@ -318,6 +317,7 @@ int main(int argc, char *argv[])
   }
 
   ntrials = 128 * 1024; /* number of trials */
+  mpi_ntrials = ntrials / 4;
   nvars = 16;           /* number of variables (problem dimension) */
   srand48(time(0));
 
@@ -332,7 +332,7 @@ int main(int argc, char *argv[])
 
   if (rank != 0) //only secondary threads enter
   {
-    for (trial = 0; trial < ntrials / 4; trial++)
+    for (trial = 0; trial < mpi_ntrials; trial++)
     {
       /* starting guess for rosenbrock test function, search space in [-4, 4) */
       for (int i = 0; i < nvars; i++)
@@ -385,7 +385,7 @@ int main(int argc, char *argv[])
       }
     }
 
-    t1 = get_wtime();
+    double t1 = get_wtime();
 
     printf("\n\nFINAL RESULTS:\n");
     printf("Elapsed time = %.3lf s\n", t1 - t0);

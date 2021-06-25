@@ -347,7 +347,6 @@ int main(int argc, char *argv[])
   double epsilon = EPSMIN;
   int nvars;
   int trial, ntrials;
-  double t0, t1;
 
   double best_fx = 1e10;
   double best_pt[MAXVARS];
@@ -429,7 +428,7 @@ int main(int argc, char *argv[])
   }
   else if (rank == 0) //only main thread enters
   {
-    t0 = get_wtime();
+    double t0 = get_wtime();
 
     for (int i = 0; i < ntrials; i++)
     {
@@ -451,7 +450,7 @@ int main(int argc, char *argv[])
       }
     }
 
-    t1 = get_wtime();
+    double t1 = get_wtime();
 
     printf("\n\nFINAL RESULTS:\n");
     printf("Elapsed time = %.3lf s\n", t1 - t0);
