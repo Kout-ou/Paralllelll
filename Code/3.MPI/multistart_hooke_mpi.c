@@ -154,7 +154,7 @@ double f(double *x, int n)
   funevals++;
   fv = 0.0;
   for (i = 0; i < n - 1; i++) /* rosenbrock */
-  fv = fv + 100.0 * pow((x[i + 1] - x[i] * x[i]), 2) + pow((x[i] - 1.0), 2);
+    fv = fv + 100.0 * pow((x[i + 1] - x[i] * x[i]), 2) + pow((x[i] - 1.0), 2);
 
   return fv;
 }
@@ -177,20 +177,20 @@ double best_nearby(double delta[MAXVARS], double point[MAXVARS], double prevbest
     z[i] = point[i] + delta[i];
     ftmp = f(z, nvars);
     if (ftmp < minf)
-    minf = ftmp;
+      minf = ftmp;
     else
     {
       delta[i] = 0.0 - delta[i];
       z[i] = point[i] + delta[i];
       ftmp = f(z, nvars);
       if (ftmp < minf)
-      minf = ftmp;
+        minf = ftmp;
       else
-      z[i] = point[i];
+        z[i] = point[i];
     }
   }
   for (i = 0; i < nvars; i++)
-  point[i] = z[i];
+    point[i] = z[i];
 
   return (minf);
 }
@@ -208,7 +208,7 @@ int hooke(int nvars, double startpt[MAXVARS], double endpt[MAXVARS], double rho,
     newx[i] = xbefore[i] = startpt[i];
     delta[i] = fabs(startpt[i] * rho);
     if (delta[i] == 0.0)
-    delta[i] = rho;
+      delta[i] = rho;
   }
   iadj = 0;
   steplength = rho;
@@ -219,11 +219,11 @@ int hooke(int nvars, double startpt[MAXVARS], double endpt[MAXVARS], double rho,
   {
     iters++;
     iadj++;
-    #if DEBUG
+#if DEBUG
     printf("\nAfter %5d funevals, f(x) =  %.4le at\n", funevals, fbefore);
     for (j = 0; j < nvars; j++)
-    printf("   x[%2d] = %.4le\n", j, xbefore[j]);
-    #endif
+      printf("   x[%2d] = %.4le\n", j, xbefore[j]);
+#endif
 
     /* find best new point, one coord at a time */
     for (i = 0; i < nvars; i++)
@@ -240,9 +240,9 @@ int hooke(int nvars, double startpt[MAXVARS], double endpt[MAXVARS], double rho,
       {
         /* firstly, arrange the sign of delta[] */
         if (newx[i] <= xbefore[i])
-        delta[i] = 0.0 - fabs(delta[i]);
+          delta[i] = 0.0 - fabs(delta[i]);
         else
-        delta[i] = fabs(delta[i]);
+          delta[i] = fabs(delta[i]);
         /* now, move further in this direction */
         tmp = xbefore[i];
         xbefore[i] = newx[i];
@@ -252,7 +252,7 @@ int hooke(int nvars, double startpt[MAXVARS], double endpt[MAXVARS], double rho,
       newf = best_nearby(delta, newx, fbefore, nvars);
       /* if the further (optimistic) move was bad.... */
       if (newf >= fbefore)
-      break;
+        break;
 
       /* make sure that the differences between the new */
       /* and the old points are due to actual */
@@ -263,9 +263,9 @@ int hooke(int nvars, double startpt[MAXVARS], double endpt[MAXVARS], double rho,
       {
         keep = 1;
         if (fabs(newx[i] - xbefore[i]) > (0.5 * fabs(delta[i])))
-        break;
+          break;
         else
-        keep = 0;
+          keep = 0;
       }
     }
     if ((steplength >= epsilon) && (newf >= fbefore))
@@ -278,7 +278,7 @@ int hooke(int nvars, double startpt[MAXVARS], double endpt[MAXVARS], double rho,
     }
   }
   for (i = 0; i < nvars; i++)
-  endpt[i] = xbefore[i];
+    endpt[i] = xbefore[i];
 
   return (iters);
 }
@@ -294,13 +294,11 @@ double get_wtime(void)
 
 int main(int argc, char *argv[])
 {
-  
 
   MPI_Init(&argc, &argv);
 
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
 
   int itermax = IMAX;
   double rho = RHO_BEGIN;
@@ -323,8 +321,6 @@ int main(int argc, char *argv[])
   nvars = 16;           /* number of variables (problem dimension) */
   srand48(time(0));
 
-  t0 = get_wtime();
-
   double fx;
   int jj;
   double startpt[MAXVARS], endpt[MAXVARS];
@@ -334,7 +330,7 @@ int main(int argc, char *argv[])
   randBuffer[1] = 0;
   randBuffer[2] = seed + rank;
 
-  if (rank != 0)  //only secondary threads enter
+  if (rank != 0) //only secondary threads enter
   {
     for (trial = 0; trial < ntrials / 4; trial++)
     {
@@ -346,32 +342,34 @@ int main(int argc, char *argv[])
 
       jj = hooke(nvars, startpt, endpt, rho, epsilon, itermax);
 
-      #if DEBUG
+#if DEBUG
       printf("\n\n\nHOOKE %d USED %d ITERATIONS, AND RETURNED\n", trial, jj);
       for (int i = 0; i < nvars; i++)
       {
         printf("x[%3d] = %15.7le \n", i, endpt[i]);
       }
-      #endif
+#endif
 
       fx = f(endpt, nvars);
-	printf("Sending");
-      MPI_Ssend(&fx,1,MPI_DOUBLE,0,1,MPI_COMM_WORLD); //MPI_send fx (MUST BE FIRST AND BLOCKING)
-      MPI_Ssend(&trial,1,MPI_INT,0,2,MPI_COMM_WORLD);
-      MPI_Ssend(&jj,1,MPI_INT,0,3,MPI_COMM_WORLD);
-      MPI_Ssend(&endpt,250,MPI_DOUBLE,0,4,MPI_COMM_WORLD);
-      #if DEBUG
+      printf("Sending \n");
+      MPI_Ssend(&fx, 1, MPI_DOUBLE, 0, 1, MPI_COMM_WORLD); //MPI_send fx (MUST BE FIRST AND BLOCKING)
+      MPI_Ssend(&trial, 1, MPI_INT, 0, 2, MPI_COMM_WORLD);
+      MPI_Ssend(&jj, 1, MPI_INT, 0, 3, MPI_COMM_WORLD);
+      MPI_Ssend(&endpt, 250, MPI_DOUBLE, 0, 4, MPI_COMM_WORLD);
+#if DEBUG
       printf("f(x) = %15.7le\n", fx);
-      #endif
+#endif
     }
   }
-  else if (rank == 0)  //only main thread enters
+  else if (rank == 0) //only main thread enters
   {
-    for (int i = 0; i <= ntrials; i++)
+    double t0 = get_wtime();
+
+    for (int i = 0; i < ntrials; i++)
     {
       //MPI_Status = status;
       printf("%d\n", i);
-      MPI_Recv(&fx,1,MPI_DOUBLE,MPI_ANY_SOURCE,1,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
+      MPI_Recv(&fx, 1, MPI_DOUBLE, MPI_ANY_SOURCE, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
       printf("received \n");
       MPI_Recv(&trial, 1, MPI_INT, MPI_ANY_SOURCE, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
       MPI_Recv(&jj, 1, MPI_INT, MPI_ANY_SOURCE, 3, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
@@ -382,29 +380,26 @@ int main(int argc, char *argv[])
         best_trial = trial;
         best_jj = jj;
         /*  */ best_fx = fx;
-        for (int i = 0; i < nvars; i++) best_pt[i] = endpt[i];
+        for (int i = 0; i < nvars; i++)
+          best_pt[i] = endpt[i];
       }
     }
-    
+
     t1 = get_wtime();
 
-printf("\n\nFINAL RESULTS:\n");
-printf("Elapsed time = %.3lf s\n", t1 - t0);
-printf("Total number of trials = %d\n", ntrials);
-printf("Total number of function evaluations = %ld\n", funevals);
-printf("Best result at trial %d used %d iterations, and returned\n", best_trial, best_jj);
-for (int i = 0; i < nvars; i++)
-{
-  printf("x[%3d] = %15.7le \n", i, best_pt[i]);
-}
-printf("f(x) = %15.7le\n", best_fx);
-
-    
+    printf("\n\nFINAL RESULTS:\n");
+    printf("Elapsed time = %.3lf s\n", t1 - t0);
+    printf("Total number of trials = %d\n", ntrials);
+    printf("Total number of function evaluations = %ld\n", funevals);
+    printf("Best result at trial %d used %d iterations, and returned\n", best_trial, best_jj);
+    for (int i = 0; i < nvars; i++)
+    {
+      printf("x[%3d] = %15.7le \n", i, best_pt[i]);
+    }
+    printf("f(x) = %15.7le\n", best_fx);
   }
 
+  MPI_Finalize();
 
-
-MPI_Finalize();
-
-return 0;
+  return 0;
 }
