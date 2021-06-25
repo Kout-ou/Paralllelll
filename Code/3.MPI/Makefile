@@ -3,7 +3,7 @@
 all: hooke
 
 hooke: multistart_hooke_mpi.c
-	  mpicc -Wall -O2 -o multistart_hooke_mpi multistart_hooke_mpi.c -lm
+	mpicc -Wall -O2 -o multistart_hooke_mpi multistart_hooke_mpi.c -lm
 
 mac: multistart_hooke_mpi.c
 	mpicc -Wall -O2 -o multistart_hooke_mpi multistart_hooke_mpi.c -lm

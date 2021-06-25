@@ -317,7 +317,7 @@ int main(int argc, char *argv[])
   }
 
   ntrials = 128 * 1024; /* number of trials */
-  mpi_ntrials = ntrials / 4;
+  int mpi_ntrials = ntrials;
   nvars = 16;           /* number of variables (problem dimension) */
   srand48(time(0));
 
