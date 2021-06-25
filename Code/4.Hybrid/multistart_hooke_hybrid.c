@@ -397,10 +397,8 @@ int main(int argc, char *argv[])
       int tag = get_comm_tag(rank, tid);
 
 #pragma omp for
-      for (trial = 0; trial < ntrials / 4; trial++)
+      for (trial = 0; trial < mpi_trials / 4; trial++)
       {
-
-
         /* starting guess for rosenbrock test function, search space in [-4, 4) */
         for (int i = 0; i < nvars; i++)
         {
