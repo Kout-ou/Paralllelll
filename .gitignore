@@ -12,3 +12,5 @@ Code/Paralllelll.xcodeproj/project.xcworkspace/xcuserdata/giannisloudaros.xcuser
 Code/0.Original Code/multistart_hooke_seq
 Code/1.OpenMP/penmp
 Code/3.MPI/multistart_hooke_mpi
+Code/1.OpenMP/multistart_hooke_omp
+Code/2.OpenMP_Tasks/multistart_hooke_omp_tasks
