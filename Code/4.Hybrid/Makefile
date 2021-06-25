@@ -2,11 +2,11 @@
 
 all: hooke
 
-hooke: multistart_hooke_mpi_omp.c
-	 gcc -Wall -O3 -o multistart_hooke_mpi_omp multistart_hooke_mpi_omp.c -lm
+hooke: multistart_hooke_hybrid.c
+	 mpicc -Wall -O3 -o multistart_hooke_hybrid multistart_hooke_hybrid.c -lm -fopenmp
 
-mac: multistart_hooke_mpi_omp.c
-	gcc-11 -Wall -O3 -o multistart_hooke_mpi_omp multistart_hooke_mpi_omp.c -lm
+mac: multistart_hooke_hybrid.c
+	mpicc -Wall -O3 -o multistart_hooke_hybrid multistart_hooke_hybrid.c -lm -openmp
 
 clean:
 	rm -f multistart_hooke_mpi_omp
