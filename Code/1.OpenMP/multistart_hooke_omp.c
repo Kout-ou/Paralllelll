@@ -294,45 +294,52 @@ double get_wtime(void)
 
 int main(int argc, char *argv[])
 {
+    //  Variable declarations.
+    double t0, t1; //  Used for time calculation.
 
     int itermax = IMAX;
     double rho = RHO_BEGIN;
     double epsilon = EPSMIN;
-    int nvars;
-    int trial, ntrials;
-    double t0, t1;
 
-    double best_fx = 1e10;
-    double best_pt[MAXVARS];
-    int best_trial = -1;
-    int best_jj = -1;
+    int nvars = 16; // Number of variables (problem dimension)
+    int trial;
+    int ntrials = 128 * 1024; // Number of trials.
 
+    double best_fx = 1e10;   //
+    double best_pt[MAXVARS]; //  Store the best possible solution here.
+    int best_trial = -1;     //
+    int best_jj = -1;        //
+
+    //  Initialize best_pt[].
     for (int i = 0; i < MAXVARS; i++)
     {
         best_pt[i] = 0.0;
     }
 
-    ntrials = 128 * 1024; /* number of trials */
-    nvars = 16;           /* number of variables (problem dimension) */
     srand48(time(0));
 
     t0 = get_wtime();
 
-    //do n trials
-#pragma omp parallel num_threads(4)
+    /*************************/
+    /* Begin Parallelization */
+    /*************************/
+
+#pragma omp parallel num_threads(4) //  Split to 4 threads.
     {
 
+        //  Local solution variables.
         double fx;
         int jj;
         double startpt[MAXVARS], endpt[MAXVARS];
 
-        short seed = (short)get_wtime(); //seed for erand()
+        //  Variables used by erand() -- rand() safe for multithreading.
+        short seed = (short)get_wtime(); //  Seed for erand().
         unsigned short randBuffer[3];
         randBuffer[0] = 0;
         randBuffer[1] = 0;
         randBuffer[2] = seed + omp_get_thread_num();
 
-#pragma omp for
+#pragma omp for //  Parallelized for-loop using OpenMP.
         for (trial = 0; trial < ntrials; trial++)
         {
             /* starting guess for rosenbrock test function, search space in [-4, 4) */
@@ -357,7 +364,7 @@ int main(int argc, char *argv[])
 
             if (fx < best_fx)
             {
-#pragma omp critical //only one thread can access the shared arrays each time
+#pragma omp critical //  Only one thread can access the shared arrays each time.
                 {
                     best_trial = trial;
                     best_jj = jj;
@@ -382,7 +389,6 @@ int main(int argc, char *argv[])
         printf("x[%3d] = %15.7le \n", i, best_pt[i]);
     }
     printf("f(x) = %15.7le\n", best_fx);
-
     
 	return 0;
 }

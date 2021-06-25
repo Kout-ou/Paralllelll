@@ -133,8 +133,8 @@
 #include <time.h>
 #include <sys/time.h>
 
-#include <mpi.h>
-#include <omp.h>
+#include <mpi.h>    //  Include MPI library
+#include <omp.h>    //  Include OpenMP library.
 
 #define MAXVARS (250)   /* max # of variables	     */
 #define RHO_BEGIN (0.5) /* stepsize geometric shrink */
@@ -295,6 +295,7 @@ double get_wtime(void)
   return (double)t.tv_sec + (double)t.tv_usec * 1.0e-6;
 }
 
+//  A function to return a unique tag for each rank's thread (given that the maximum number of ranks is 4)
 int get_comm_tag(int rank, int tid)
 {
   switch (rank)
@@ -329,9 +330,11 @@ int get_comm_tag(int rank, int tid)
 
 int main(int argc, char *argv[])
 {
+  //  Initialize MPI with multithreading (MPI_THREAD MULTIPLE allows all threads of a rank to be able to communicate).
   int provided;
   MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
 
+  //  Check if everything went smoothly.
   if (provided < MPI_THREAD_FUNNELED)
   {
     printf("Error: MPI threading level is not enough.\n");
@@ -345,21 +348,23 @@ int main(int argc, char *argv[])
 
   omp_set_num_threads(4);
 
-  double t0,t1;
+  //  Variable declarations.
+  double t0, t1; //  Used by main rank for time calculation.
 
   int itermax = IMAX;
   double rho = RHO_BEGIN;
   double epsilon = EPSMIN;
-  int nvars = 16;             /* number of variables (problem dimension) */
+  int nvars = 16;             //  Number of variables (problem dimension).
   int trial;
-  int ntrials = 128 * 1024;   /* number of trials */
-  int mpi_ntrials = ntrials / (MPI_RANKS-1);  //distribute for loop evenly between secondary ranks (rank 0 is main rank)
+  int ntrials = 128 * 1024;   // Number of trials.
+  int mpi_ntrials = ntrials / (MPI_RANKS - 1);    // Distribute for-loop evenly between secondary ranks (rank 0 is main rank).
 
   double best_fx = 1e10;
   double best_pt[MAXVARS];
   int best_trial = -1;
   int best_jj = -1;
 
+  //  Initialize best_pt.
   for (int i = 0; i < MAXVARS; i++)
   {
     best_pt[i] = 0.0;
@@ -380,24 +385,40 @@ int main(int argc, char *argv[])
 
   if (rank != 0) //only secondary threads enter
   {
-#pragma omp parallel
+
+    /*****************************************************************************/
+    /* Secondary rank(s) only: Perform the comparisons and find the best values. */
+    /*****************************************************************************/
+
+#pragma omp parallel    //  Split each secondary rank to threads.
     {
 
       double fx;
       int jj;
       double startpt[MAXVARS], endpt[MAXVARS];
 
-      short seed = (short)get_wtime(); //seed for erand()
+      //  Variables used by erand() -- rand() safe for multithreading.
+      short seed = (short)get_wtime();    //  Seed for erand().
       unsigned short randBuffer[3];
       randBuffer[0] = 0;
       randBuffer[1] = 0;
       randBuffer[2] = seed + omp_get_thread_num();
 
-      int tid = omp_get_thread_num();
+      // Get a unique tag for messaging the main rank. The tag is determined by the rank and the thread_id of each rank.
+      int tid = (int)omp_get_thread_num();  //  Make sure it returns thread_id as int.
       int tag = get_comm_tag(rank, tid);
+      
+      //  Check if tag assignment went on smoothly.
+      if (tag == -1)
+      {
+        printf("Error: Something went wrong during MPI message tag assignment. \n");
+        MPI_Finalize();
+        return 1;
+      }
 
+      //  Distribute for-loop of trials between available threads
 #pragma omp for
-      for (trial = 0; trial < mpi_ntrials / 4; trial++)
+      for (trial = 0; trial < mpi_ntrials; trial++)
       {
         /* starting guess for rosenbrock test function, search space in [-4, 4) */
         for (int i = 0; i < nvars; i++)
@@ -416,8 +437,10 @@ int main(int argc, char *argv[])
 #endif
 
         fx = f(endpt, nvars);
-        printf("Sending");
-        MPI_Ssend(&fx, 1, MPI_DOUBLE, 0, tag, MPI_COMM_WORLD); //MPI_send fx (MUST BE FIRST AND BLOCKING)
+
+        //  Send the results to main rank (send fx and block until main acknowledges you).
+        //  (*) All threads can send data to the main rank (MPI_THREAD_MULTIPLE)
+        MPI_Ssend(&fx, 1, MPI_DOUBLE, 0, tag, MPI_COMM_WORLD);
         MPI_Ssend(&trial, 1, MPI_INT, 0, tag+1, MPI_COMM_WORLD);
         MPI_Ssend(&jj, 1, MPI_INT, 0, tag+2, MPI_COMM_WORLD);
         MPI_Ssend(&endpt, 250, MPI_DOUBLE, tag+3, tag, MPI_COMM_WORLD);
@@ -429,32 +452,41 @@ int main(int argc, char *argv[])
       }
     }
   }
-  else if (rank == 0) //only main thread enters
+  else if (rank == 0)
   {
+
+    /*********************************************************************/
+    /* Main rank only: Perform the comparisons and find the best values. */
+    /*********************************************************************/
+
     t0 = get_wtime();
 
     for (int i = 0; i < ntrials; i++)
     {
-      //MPI_Status = status;
+      //  Receive the values from each process (the first process to be aknowledged will be unblocked and able to send all its calculated values).
       printf("%d\n", i);
       MPI_Recv(&fx, 1, MPI_DOUBLE, MPI_ANY_SOURCE, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
       printf("received \n");
       MPI_Recv(&trial, 1, MPI_INT, MPI_ANY_SOURCE, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
       MPI_Recv(&jj, 1, MPI_INT, MPI_ANY_SOURCE, 3, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
       MPI_Recv(&endpt, 250, MPI_DOUBLE, MPI_ANY_SOURCE, 4, MPI_COMM_WORLD, MPI_STATUS_IGNORE); //MPI_receive fx (MUST BE FIRST)
-      //MPI_receive trial,jj
+
+      //  Perform the comparisons and determine the best point found.
       if (fx < best_fx)
       {
         best_trial = trial;
         best_jj = jj;
-        /*  */ best_fx = fx;
+        best_fx = fx;
         for (int i = 0; i < nvars; i++)
+            {
           best_pt[i] = endpt[i];
+            }
       }
     }
 
     t1 = get_wtime();
 
+    //  Print the final results.
     printf("\n\nFINAL RESULTS:\n");
     printf("Elapsed time = %.3lf s\n", t1 - t0);
     printf("Total number of trials = %d\n", ntrials);
@@ -467,6 +499,7 @@ int main(int argc, char *argv[])
     printf("f(x) = %15.7le\n", best_fx);
   }
 
+  //  Finalize MPI session.
   MPI_Finalize();
 
   return 0;

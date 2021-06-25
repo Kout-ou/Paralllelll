@@ -135,10 +135,10 @@
 
 #include <mpi.h>
 
-#define MAXVARS (250)   /* max # of variables	     */
-#define RHO_BEGIN (0.5) /* stepsize geometric shrink */
-#define EPSMIN (1E-6)   /* ending value of stepsize  */
-#define IMAX (5000)     /* max # of iterations	     */
+#define MAXVARS (250)     // max # of variables
+#define RHO_BEGIN (0.5)   // stepsize geometric shrink
+#define EPSMIN (1E-6)     // ending value of stepsize 
+#define IMAX (5000)       // max # of iterations
 
 #define DEBUG 0
 
@@ -296,27 +296,31 @@ double get_wtime(void)
 
 int main(int argc, char *argv[])
 {
-
+  //Initialize MPI
   MPI_Init(&argc, &argv);
 
+  //Get each rank (0: main, non-zero: secondaries)
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-  double t0, t1;
+  //  Variable declarations.
+  double t0, t1;   //  Used by main rank for time calculation.
 
   int itermax = IMAX;
   double rho = RHO_BEGIN;
   double epsilon = EPSMIN;
-  int nvars = 16;                              /* number of variables (problem dimension) */
+
+  int nvars = 16;    // Number of variables (problem dimension).
   int trial;
-  int ntrials = 128 * 1024;                    /* number of trials */
-  int mpi_ntrials = ntrials / (MPI_RANKS - 1); //distribute for loop evenly between secondary ranks (rank 0 is main rank)
+  int ntrials = 128 * 1024;    // Number of trials.
+  int mpi_ntrials = ntrials / (MPI_RANKS - 1);    // Distribute for-loop evenly between secondary ranks (rank 0 is main rank).
 
-  double best_fx = 1e10;
-  double best_pt[MAXVARS];
-  int best_trial = -1;
-  int best_jj = -1;
+  double best_fx = 1e10;      //
+  double best_pt[MAXVARS];    //  Store the best possible solution here.
+  int best_trial = -1;        //
+  int best_jj = -1;           //
 
+  //  Initialize best_pt[].
   for (int i = 0; i < MAXVARS; i++)
   {
     best_pt[i] = 0.0;
@@ -324,17 +328,24 @@ int main(int argc, char *argv[])
 
   srand48(time(0));
 
+  //  Local solution variables.
   double fx;
   int jj;
   double startpt[MAXVARS], endpt[MAXVARS];
-  short seed = (short)get_wtime(); //seed for erand()
+
+  //  Variables used by erand() -- rand() safe for multithreading.
+  short seed = (short)get_wtime();    //  Seed for erand().
   unsigned short randBuffer[3];
   randBuffer[0] = 0;
   randBuffer[1] = 0;
   randBuffer[2] = seed + rank;
 
-  if (rank != 0) //only secondary threads enter
+  if (rank != 0)
   {
+    /*****************************************************************************/
+    /* Secondary rank(s) only: Perform the comparisons and find the best values. */
+    /*****************************************************************************/
+
     for (trial = 0; trial < mpi_ntrials; trial++)
     {
       /* starting guess for rosenbrock test function, search space in [-4, 4) */
@@ -354,6 +365,8 @@ int main(int argc, char *argv[])
 #endif
 
       fx = f(endpt, nvars);
+
+      //  Send the results to main rank (send fx and block until main acknowledges you).
       printf("Sending \n");
       MPI_Ssend(&fx, 1, MPI_DOUBLE, 0, 1, MPI_COMM_WORLD); //MPI_send fx (MUST BE FIRST AND BLOCKING)
       MPI_Ssend(&trial, 1, MPI_INT, 0, 2, MPI_COMM_WORLD);
@@ -364,32 +377,41 @@ int main(int argc, char *argv[])
 #endif
     }
   }
-  else if (rank == 0) //only main thread enters
+  else if (rank == 0)
   {
+
+    /*********************************************************************/
+    /* Main rank only: Perform the comparisons and find the best values. */
+    /*********************************************************************/
+
     t0 = get_wtime();
 
     for (int i = 0; i < ntrials; i++)
     {
-      //MPI_Status = status;
-      printf("%d\n", i);
+      //  Receive the values from each process (the first process to be aknowledged will be unblocked and able to send all its calculated values).
       MPI_Recv(&fx, 1, MPI_DOUBLE, MPI_ANY_SOURCE, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
       printf("received \n");
       MPI_Recv(&trial, 1, MPI_INT, MPI_ANY_SOURCE, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
       MPI_Recv(&jj, 1, MPI_INT, MPI_ANY_SOURCE, 3, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-      MPI_Recv(&endpt, 250, MPI_DOUBLE, MPI_ANY_SOURCE, 4, MPI_COMM_WORLD, MPI_STATUS_IGNORE); //MPI_receive fx (MUST BE FIRST)
-      //MPI_receive trial,jj
+      MPI_Recv(&endpt, 250, MPI_DOUBLE, MPI_ANY_SOURCE, 4, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+      //  Perform the comparisons and determine the best point found.
       if (fx < best_fx)
       {
         best_trial = trial;
         best_jj = jj;
-        /*  */ best_fx = fx;
+        best_fx = fx;
         for (int i = 0; i < nvars; i++)
+        {
           best_pt[i] = endpt[i];
+        }
       }
     }
 
     t1 = get_wtime();
 
+
+    //  Print the final results.
     printf("\n\nFINAL RESULTS:\n");
     printf("Elapsed time = %.3lf s\n", t1 - t0);
     printf("Total number of trials = %d\n", ntrials);
@@ -402,7 +424,8 @@ int main(int argc, char *argv[])
     printf("f(x) = %15.7le\n", best_fx);
   }
 
-  MPI_Finalize();
+  //  Finalize MPI session.
+  MPI_Finalize(); 
 
   return 0;
 }
