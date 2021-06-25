@@ -297,28 +297,28 @@ int get_comm_tag(int rank, int tid)
   switch (rank)
     {
     case 1:
-      if (tid = 0) return 0;
-      if (tid = 1) return 1;
-      if (tid = 2) return 2;
-      if (tid = 3) return 3;
+      if (tid == 0) return 0;
+      if (tid == 1) return 1;
+      if (tid == 2) return 2;
+      if (tid == 3) return 3;
       break;
     case 2:
-      if (tid = 0) return 4;
-      if (tid = 1) return 5;
-      if (tid = 2) return 6;
-      if (tid = 3) return 7;
+      if (tid == 0) return 4;
+      if (tid == 1) return 5;
+      if (tid == 2) return 6;
+      if (tid == 3) return 7;
       break;
     case 3:
-      if (tid = 0) return 8;
-      if (tid = 1) return 9;
-      if (tid = 2) return 10;
-      if (tid = 3) return 11;
+      if (tid == 0) return 8;
+      if (tid == 1) return 9;
+      if (tid == 2) return 10;
+      if (tid == 3) return 11;
       break;
     case 4:
-      if (tid = 0) return 12;
-      if (tid = 1) return 13;
-      if (tid = 2) return 14;
-      if (tid = 3) return 15;
+      if (tid == 0) return 12;
+      if (tid == 1) return 13;
+      if (tid == 2) return 14;
+      if (tid == 3) return 15;
       break;
     default: return -1; 
     }
@@ -388,6 +388,9 @@ int main(int argc, char *argv[])
       randBuffer[0] = 0;
       randBuffer[1] = 0;
       randBuffer[2] = seed + omp_get_thread_num();
+
+      int tid = omp_get_thread_num();
+      int tag = get_comm_tag(rank, tid);
 
 #pragma omp for
       for (trial = 0; trial < ntrials / 4; trial++)
