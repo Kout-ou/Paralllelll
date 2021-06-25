@@ -143,8 +143,6 @@
 
 #define DEBUG 0
 
-#define MPI_RANKS 2
-
 /* global variables */
 unsigned long funevals = 0;
 
@@ -313,6 +311,10 @@ int main(int argc, char *argv[])
   MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
+  //  Get total number of ranks to split the work between them.
+  int world_size;
+  MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+
   omp_set_num_threads(4);
 
   //  Variable declarations.
@@ -323,8 +325,8 @@ int main(int argc, char *argv[])
   double epsilon = EPSMIN;
   int nvars = 16; //  Number of variables (problem dimension).
   int trial;
-  int ntrials = 128 * 1024;                    // Number of trials.
-  int mpi_ntrials = ntrials / (MPI_RANKS - 1); // Distribute for-loop evenly between secondary ranks (rank 0 is main rank).
+  int ntrials = 128 * 1024;                     // Number of trials.
+  int mpi_ntrials = ntrials / (world_size - 1); // Distribute for-loop evenly between secondary ranks (rank 0 is main rank).
 
   double best_fx = 1e10;
   double best_pt[MAXVARS];
