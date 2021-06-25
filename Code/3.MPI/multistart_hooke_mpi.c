@@ -308,6 +308,7 @@ int main(int argc, char *argv[])
   double rho = RHO_BEGIN;
   double epsilon = EPSMIN;
   int nvars = 16;                              /* number of variables (problem dimension) */
+  int trial;
   int ntrials = 128 * 1024;                    /* number of trials */
   int mpi_ntrials = ntrials / (MPI_RANKS - 1); //distribute for loop evenly between secondary ranks (rank 0 is main rank)
 

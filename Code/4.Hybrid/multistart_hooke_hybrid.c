@@ -323,7 +323,7 @@ int get_comm_tag(int rank, int tid)
       if (tid == 2) return 14;
       if (tid == 3) return 15;
       break;
-    default: return -1; 
+    default: return -1;
     }
 }
 
@@ -351,6 +351,7 @@ int main(int argc, char *argv[])
   double rho = RHO_BEGIN;
   double epsilon = EPSMIN;
   int nvars = 16;             /* number of variables (problem dimension) */
+  int trial;
   int ntrials = 128 * 1024;   /* number of trials */
   int mpi_ntrials = ntrials / (MPI_RANKS-1);  //distribute for loop evenly between secondary ranks (rank 0 is main rank)
 
@@ -398,7 +399,7 @@ int main(int argc, char *argv[])
 #pragma omp for
       for (trial = 0; trial < ntrials / 4; trial++)
       {
-        
+
 
         /* starting guess for rosenbrock test function, search space in [-4, 4) */
         for (int i = 0; i < nvars; i++)
@@ -422,7 +423,7 @@ int main(int argc, char *argv[])
         MPI_Ssend(&trial, 1, MPI_INT, 0, tag+1, MPI_COMM_WORLD);
         MPI_Ssend(&jj, 1, MPI_INT, 0, tag+2, MPI_COMM_WORLD);
         MPI_Ssend(&endpt, 250, MPI_DOUBLE, tag+3, tag, MPI_COMM_WORLD);
-        
+
 
 #if DEBUG
         printf("f(x) = %15.7le\n", fx);
