@@ -134,6 +134,7 @@
 #include <sys/time.h>
 
 #include <mpi.h>
+#include <omp.h>
 
 #define MAXVARS (250)   /* max # of variables	     */
 #define RHO_BEGIN (0.5) /* stepsize geometric shrink */
@@ -141,6 +142,8 @@
 #define IMAX (5000)     /* max # of iterations	     */
 
 #define DEBUG 0
+
+#define MPI_RANKS 2
 
 /* global variables */
 unsigned long funevals = 0;
@@ -345,8 +348,9 @@ int main(int argc, char *argv[])
   int itermax = IMAX;
   double rho = RHO_BEGIN;
   double epsilon = EPSMIN;
-  int nvars;
-  int trial, ntrials;
+  int nvars = 16;             /* number of variables (problem dimension) */
+  int ntrials = 128 * 1024;   /* number of trials */
+  int mpi_ntrials = ntrials / (MPI_RANKS-1);  //distribute for loop evenly between secondary ranks (rank 0 is main rank)
 
   double best_fx = 1e10;
   double best_pt[MAXVARS];
@@ -358,8 +362,6 @@ int main(int argc, char *argv[])
     best_pt[i] = 0.0;
   }
 
-  ntrials = 128 * 1024; /* number of trials */
-  nvars = 16;           /* number of variables (problem dimension) */
   srand48(time(0));
 
   t0 = get_wtime();

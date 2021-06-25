@@ -142,6 +142,8 @@
 
 #define DEBUG 0
 
+#define MPI_RANKS 2
+
 /* global variables */
 unsigned long funevals = 0;
 
@@ -304,7 +306,6 @@ int main(int argc, char *argv[])
   double rho = RHO_BEGIN;
   double epsilon = EPSMIN;
   int nvars;
-  int trial, ntrials;
 
   double best_fx = 1e10;
   double best_pt[MAXVARS];
