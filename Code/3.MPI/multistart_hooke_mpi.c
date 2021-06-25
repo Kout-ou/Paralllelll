@@ -142,6 +142,8 @@
 
 #define DEBUG 0
 
+#define MPI_RANKS 2
+
 /* global variables */
 unsigned long funevals = 0;
 
@@ -304,7 +306,6 @@ int main(int argc, char *argv[])
   double rho = RHO_BEGIN;
   double epsilon = EPSMIN;
   int nvars;
-  int trial, ntrials;
 
   double best_fx = 1e10;
   double best_pt[MAXVARS];
@@ -316,8 +317,8 @@ int main(int argc, char *argv[])
     best_pt[i] = 0.0;
   }
 
-  ntrials = 128 * 1024; /* number of trials */
-  mpi_ntrials = ntrials / 4;
+  int ntrials = 128 * 1024; /* number of trials */
+  int mpi_ntrials = ntrials / 2;
   nvars = 16;           /* number of variables (problem dimension) */
   srand48(time(0));
 
