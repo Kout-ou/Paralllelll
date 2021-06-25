@@ -302,10 +302,14 @@ int main(int argc, char *argv[])
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
+  double t0, t1;
+
   int itermax = IMAX;
   double rho = RHO_BEGIN;
   double epsilon = EPSMIN;
-  int nvars;
+  int nvars = 16;                              /* number of variables (problem dimension) */
+  int ntrials = 128 * 1024;                    /* number of trials */
+  int mpi_ntrials = ntrials / (MPI_RANKS - 1); //distribute for loop evenly between secondary ranks (rank 0 is main rank)
 
   double best_fx = 1e10;
   double best_pt[MAXVARS];
@@ -317,9 +321,6 @@ int main(int argc, char *argv[])
     best_pt[i] = 0.0;
   }
 
-  ntrials = 128 * 1024; /* number of trials */
-  int mpi_ntrials = ntrials;
-  nvars = 16;           /* number of variables (problem dimension) */
   srand48(time(0));
 
   double fx;
@@ -364,7 +365,7 @@ int main(int argc, char *argv[])
   }
   else if (rank == 0) //only main thread enters
   {
-    double t0 = get_wtime();
+    t0 = get_wtime();
 
     for (int i = 0; i < ntrials; i++)
     {
@@ -386,7 +387,7 @@ int main(int argc, char *argv[])
       }
     }
 
-    double t1 = get_wtime();
+    t1 = get_wtime();
 
     printf("\n\nFINAL RESULTS:\n");
     printf("Elapsed time = %.3lf s\n", t1 - t0);
